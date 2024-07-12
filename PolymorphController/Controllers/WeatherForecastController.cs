@@ -19,6 +19,14 @@ public class WeatherForecastController : ControllerBase
             return Task.FromResult(new MouseProcessor().Process(mouse));
         throw new NotImplementedException();
     }
+
+    [HttpPost("Cat")]
+    public Task<string> ProcessCat([FromBody] Cat cat)
+        => Task.FromResult(new CatProcessor().Process(cat));
+
+    [HttpPost("Dog")]
+    public Task<string> ProcessDog([FromBody] Dog dog)
+        => Task.FromResult(new DogProcessor().Process(dog));
 }
 
 [Newtonsoft.Json.JsonConverter(typeof(JsonInheritanceConverter), "$type")]
