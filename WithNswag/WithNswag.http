@@ -1,0 +1,6 @@
+@WithNswag_HostAddress = http://localhost:5216
+
+GET {{WithNswag_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

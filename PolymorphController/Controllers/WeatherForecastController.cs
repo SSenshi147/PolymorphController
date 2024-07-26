@@ -1,9 +1,37 @@
 using Microsoft.AspNetCore.Mvc;
-using NJsonSchema.NewtonsoftJson.Converters;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Annotations;
+using Swashbuckle.AspNetCore.Filters;
+
+
+//using NJsonSchema.NewtonsoftJson.Converters;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace PolymorphController.Controllers;
+
+//public class MyRequestBodyFilter : IRequestBodyFilter
+//{
+//    public void Apply(OpenApiRequestBody requestBody, RequestBodyFilterContext context)
+//    {
+//        ;
+//    }
+//}
+
+//public class MySchemaFilter : ISchemaFilter
+//{
+//    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+//    {
+//        var dc = schema.Discriminator;
+//        if (context.MemberInfo?.ReflectedType?.IsAbstract ?? false)
+//        {
+//            ;
+//        }
+//    }
+//}
 
 [ApiController]
 [Route("[controller]")]
@@ -12,33 +40,32 @@ public class WeatherForecastController : ControllerBase
     [HttpPost]
     public Task<string> Process([FromBody] AnimalBase animalBase)
     {
-        var typename= animalBase.GetType().Name;
-        var fullname = animalBase.GetType().FullName;
-        
         if (animalBase is Cat cat)
             return Task.FromResult(new CatProcessor().Process(cat));
         if (animalBase is Dog dog)
             return Task.FromResult(new DogProcessor().Process(dog));
         throw new NotImplementedException();
     }
-
-    [HttpPost("Cat")]
-    public Task<string> ProcessCat([FromBody] Cat cat)
-        => Task.FromResult(new CatProcessor().Process(cat));
-
-    [HttpPost("Dog")]
-    public Task<string> ProcessDog([FromBody] Dog dog)
-        => Task.FromResult(new DogProcessor().Process(dog));
 }
 
-[Newtonsoft.Json.JsonConverter(typeof(JsonInheritanceConverter), "$type")]
-[KnownType(typeof(Dog))]
-[KnownType(typeof(Cat))]
+//[Newtonsoft.Json.JsonConverter(typeof(JsonInheritanceConverter), "$type")]
+//[KnownType(typeof(Dog))]
+//[KnownType(typeof(Cat))]
 [JsonDerivedType(typeof(Dog), "dog")]
 [JsonDerivedType(typeof(Cat), "cat")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "animalType")]
+[SwaggerSubType(typeof(Cat), DiscriminatorValue = "cat")]
+[SwaggerSubType(typeof(Dog), DiscriminatorValue = "dog")]
+[SwaggerDiscriminator("animalType")]
 public abstract class AnimalBase
 {
+    public AnimalType AnimalType { get; set; }
     public string Name { get; set; } = string.Empty;
+}
+
+public enum AnimalType
+{
+    dog, cat
 }
 
 public class Dog : AnimalBase
@@ -50,7 +77,6 @@ public class Cat : AnimalBase
 {
     public string Color { get; set; } = string.Empty;
 }
-
 
 public abstract class Processor<T> where T : AnimalBase
 {
@@ -73,3 +99,34 @@ public class CatProcessor : Processor<Cat>
     }
 }
 
+public class Asd : IMultipleExamplesProvider<AnimalBase>
+{
+    public IEnumerable<SwaggerExample<AnimalBase>> GetExamples()
+    {
+        yield return new SwaggerExample<AnimalBase>()
+        {
+            Name = "Cat",
+            Description = "Cat",
+            Summary = "Cat",
+            Value = new Cat
+            {
+                AnimalType = AnimalType.cat,
+                Color = "orange",
+                Name = "sanyi",
+            }
+        };
+
+        yield return new SwaggerExample<AnimalBase>()
+        {
+            Name = "Dog",
+            Description = "Dog",
+            Summary = "Dog",
+            Value = new Dog
+            {
+                AnimalType = AnimalType.dog,
+                GoodBoi = true,
+                Name = "kutyi",
+            }
+        };
+    }
+}

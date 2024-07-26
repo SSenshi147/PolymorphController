@@ -1,3 +1,5 @@
+using PolymorphController.Controllers;
+using Swashbuckle.AspNetCore.Filters;
 using System.Text.Json.Serialization;
 
 namespace PolymorphController;
@@ -10,16 +12,21 @@ public class Program
 
         //builder.Services.AddControllers().AddNewtonsoftJson(opt => opt.SerializerSettings.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.All);
         //builder.Services.AddControllers().AddNewtonsoftJson();
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(x =>
+        {
+            x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
         //builder.Services.AddOpenApiDocument(opt =>
         //{
         //});
 
+        builder.Services.AddSwaggerExamplesFromAssemblyOf<Asd>();
         builder.Services.AddSwaggerGen(opt =>
         {
+            opt.EnableAnnotations(true, true);
             opt.UseOneOfForPolymorphism();
             opt.UseAllOfForInheritance();
-            opt.SelectDiscriminatorNameUsing(_ => "$type");
+            opt.SelectDiscriminatorNameUsing(_ => "animalType");
             opt.SelectDiscriminatorValueUsing(_ =>
             {
                 var baseType = _;
@@ -43,6 +50,9 @@ public class Program
 
                 return output;
             });
+            opt.ExampleFilters();
+            //opt.AddRequestBodyFilterInstance<MyRequestBodyFilter>(new MyRequestBodyFilter());
+            //opt.AddSchemaFilterInstance<MySchemaFilter>(new MySchemaFilter());
         });
 
 
